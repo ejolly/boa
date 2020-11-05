@@ -263,7 +263,7 @@ def uninstall(libraries, pip):
     if pip:
         # We have to call pip directly to uninstall cause conda wont
         pipstr = ' '.join(libraries)
-        run(f'pip uninstall {pipstr} -y')
+        run(f'pip uninstall {pipstr} -y -q')
         # Now update the environment
         for e in libraries:
             _, currentpip = check_for_package(e, currentpip)
