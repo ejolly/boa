@@ -17,8 +17,7 @@ Boa strives to be a CLI "wrapper" for [Anaconda](https://anaconda.org/) to make 
   - [uninstall](#uninstall)
 - [Additional Info](#additional-info)
   - [lockfile](#lockfile)
-  - [update](#update)
-- [Limitations](#limitations)
+- [Roadmap](#roadmap)
 
 ## Overview
 
@@ -89,12 +88,8 @@ What is the point of this file? In short, it allows Boa to update package versio
 
 ---
 
+## Roadmap
 
-### update
+- `boa update`
+- conda channel support
 
-`boa update [PKG]`
-
----
-
-## Limitations
-Currently activating and deactivating an environment from within boa doesn't seem possible. So as a potentially more convenient work around checked out the `conda_auto_env.sh` file in this repo. If you `source` that in your `.zshrc` conda will auto activate an environment as soon as you `cd` into a folder with an `environment.yml` file and will auto-deactivate that environment as soon as you `cd` elsewhere. Pretty handy!
