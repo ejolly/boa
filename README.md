@@ -25,7 +25,7 @@ The "blueprints" of your environment specifying Python and package versions are 
 
 ## Installation
 
-`pip install https://github.com/ejolly/boa.git`  
+`pip install git+https://github.com/ejolly/boa.git`  
 `boa setup --autoenv`  (using `--autoenv` is highly recommended but see the [caveats](#autoenv-caveats) below!)
 
 

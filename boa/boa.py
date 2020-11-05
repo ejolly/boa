@@ -113,7 +113,7 @@ def setup(autoenv):
                     msg = f"Succesfully modified {str(path)} to add boa shell tools"
                 f.write("# <<< boa end <<<\n")
             click.echo(msg)
-            click.echo("You will need to reload your terminal for this to take effect")
+            click.echo("You will need to reload your terminal or 'source ~/.zshrc' for this to take effect")
             click.echo(
                 f"To remove boa shell tools, just delete the block commented by boa start >>> and boa end <<< in {str(path)}"
             )
