@@ -285,7 +285,11 @@ def uninstall(libraries, pip):
 
     with open("environment.yml", "w") as f:
         _ = yaml.dump(envdict, f, sort_keys=True)
-    run("conda env update --prefix ./env --file environment.yml  --prune -q")
+    # FIXME: Remove when GH:1 is resolved
+    if Path('env').exists():
+        shutil.rmtree('env')
+    # run("conda env update --prefix ./env --file environment.yml --prune -q")
+    call("conda env create --prefix ./env --file environment.yml -q", shell=True)
     version_deps_and_make_lockfile()
     click.echo("environment packages updated")
 
