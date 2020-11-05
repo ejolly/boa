@@ -66,10 +66,10 @@ def clean():
     """
     try:
         shutil.rmtree("./env")
-        click.echo("removed all installed packeges in env/")
+        click.echo("removed all installed packeges")
         click.echo("use 'boa install' to rebuild environment")
     except FileNotFoundError as _:  # noqa
-        click.echo("no env/ present")
+        click.echo("no installed packages found")
 
 
 @cli.command()
@@ -112,8 +112,8 @@ def install(libraries, pip):
             call(
                 "conda env create --prefix ./env --file environment.yml -q", shell=True
             )
-            click.echo("environment packages installed into env/")
-        click.echo("You need to manually activate: conda activate ./env")
+            click.echo("environment packages installation complete!")
+            click.echo("Acivate the environment with: conda activate ./env")
     else:
         with open("environment.yml", "r+") as f:
             envdict = yaml.load(f, Loader=yaml.FullLoader)
@@ -133,12 +133,11 @@ def install(libraries, pip):
                     envdict["dependencies"].append(e)
         with open("environment.yml", "w") as f:
             _ = yaml.dump(envdict, f, sort_keys=True)
-    call(
-        "conda env update --prefix ./env --file environment.yml  --prune -q",
-        shell=True,
-    )
-    click.echo("environment packages updated")
-    click.echo("deactivate and reactivate enviroment to see changes")
+        call(
+            "conda env update --prefix ./env --file environment.yml  --prune -q",
+            shell=True,
+        )
+        click.echo("environment packages updated")
 
 
 if __name__ == "__main__":
