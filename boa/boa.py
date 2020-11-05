@@ -32,7 +32,8 @@ def run(cmd):
     if env_isactive():
         call(cmd, shell=True)
     else:
-        call(f"/bin/zsh -i -c 'boa-activate && {cmd}'", shell=True)
+        call(f"/bin/zsh -i -c 'boa-activate && {cmd} && exit'", shell=True)
+    return
 
 
 def version_deps_and_make_lockfile():
@@ -260,12 +261,14 @@ def uninstall(libraries, pip):
         envdict = yaml.load(f, Loader=yaml.FullLoader)
     currentpip, everythingelse = split_conda_pip(envdict["dependencies"])
     if pip:
-        pruned_deps = []
+        # We have to call pip directly to uninstall cause conda wont
+        pipstr = ' '.join(libraries)
+        run(f'pip uninstall {pipstr} -y')
+        # Now update the environment
         for e in libraries:
-            _, nohasit = check_for_package(e, currentpip)
-            pruned_deps += nohasit
+            _, currentpip = check_for_package(e, currentpip)
 
-        pruned_deps = set(pruned_deps)
+        pruned_deps = set(currentpip)
         pruned_deps = [e for e in pruned_deps]
         pipdeps = {"pip": pruned_deps}
         everythingelse.append(pipdeps)
