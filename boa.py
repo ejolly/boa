@@ -62,7 +62,7 @@ def init(pyv):
 @cli.command()
 def clean():
     """
-    Compeletely remove installed packages in env/
+    Compeletely remove installed packages in env
     """
     try:
         shutil.rmtree("./env")
@@ -108,11 +108,7 @@ def install(libraries, pip):
     Install a new conda package by first adding it to environment.yml and then updating the environment.
     """
     if len(libraries) == 0:
-        if Path("./env").exists():
-            click.echo(
-                "env folder is already present. If you want to rebuild the environment from scratch first use boa clean."
-            )
-        else:
+        if not Path("./env").exists():
             call(
                 "conda env create --prefix ./env --file environment.yml -q", shell=True
             )
@@ -133,14 +129,16 @@ def install(libraries, pip):
         else:
             libraries = [e for e in libraries]
             for e in libraries:
-                if e not in envdict['dependencies']:
-                    envdict['dependencies'].append(e)
+                if e not in envdict["dependencies"]:
+                    envdict["dependencies"].append(e)
         with open("environment.yml", "w") as f:
             _ = yaml.dump(envdict, f, sort_keys=True)
     call(
-        "conda env update --prefix ./env --file environment.yml  --prune",
+        "conda env update --prefix ./env --file environment.yml  --prune -q",
         shell=True,
     )
+    click.echo("environment packages updated")
+    click.echo("deactivate and reactivate enviroment to see changes")
 
 
 if __name__ == "__main__":
