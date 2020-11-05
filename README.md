@@ -1,6 +1,8 @@
 # Boa: The missing conda environment manager
 
-Boa strives to be a CLI "wrapper" for [Anaconda](https://anaconda.org/) to make environment management a bit easier. It's heavily inspired by tools from the Javascript community likt [npm](https://www.npmjs.com/) or [yarn](https://yarnpkg.com/) which utilize a `package.json` file manage project dependencies. Currently only compatible with `zsh`. 
+*Contributors wanted!*
+
+Boa strives to be a CLI "wrapper" for [Anaconda](https://anaconda.org/) to make environment management a bit easier. It's heavily inspired by tools from the Javascript community likt [npm](https://www.npmjs.com/) or [yarn](https://yarnpkg.com/) which utilize a `package.json` file manage project dependencies. Currently only compatible with `zsh`. Checkout the demo GIF for an overview of it's current functionality:   
 
 ![](boa.gif)
 
