@@ -27,12 +27,12 @@ function conda_auto_env() {
         echo "Conda env doesn't exist, creating..."
         conda env create --prefix ./env --file environment.yml -q
         conda activate ./env
-        echo "Auto-activated local conda env"
+        echo "Activated local conda env"
       fi
     fi
   else
     if [[ $ACTIVE == 'env' ]]; then
-      echo "Auto-deactivated local conda env"
+      echo "Deactivated local conda env"
       conda deactivate
     fi
   fi
