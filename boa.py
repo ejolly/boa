@@ -79,7 +79,7 @@ def install(pkgs, skipinstall):
     """
     with open("environment.yml", "r+") as f:
         envdict = yaml.load(f, Loader=yaml.FullLoader)
-        envdict["dependencies"] = list(set(envdict["dependencies"] + pkgs))
+        envdict["dependencies"] = list(set(envdict["dependencies"] + list(pkgs)))
         f.seek(0)
         _ = yaml.dump(envdict, f, sort_keys=False)
         f.truncate()
