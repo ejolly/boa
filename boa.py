@@ -28,17 +28,20 @@ def split_conda_pip(deps):
 
 @click.group()
 def cli():
+    """
+    Boa is a wrapper around conda to make environment management easier. Call it with the sub-commands below
+    """
     pass
 
 
 @cli.command()
-@click.argument("pyv", required=False)
+@click.argument(
+    "pyv",
+    required=False,
+)
 def init(pyv):
     """
-    Create an environment.yml in the local directory with name = [NAME] and python version = [PYV]. Also adds boa as a dependency\n
-
-    NAME: name of the environment; only specified within the environment.yml; Default 'env'\n
-    PYV: what python version to use; Default 'python=3.6'\n
+    Initialize an environment.yml file with an optionally specified Python version and Boa. Python version should be specified as a string, e.g. 'python-3.6'. Default: 3.8.
     """
 
     if pyv is None:
@@ -62,7 +65,7 @@ def init(pyv):
 @cli.command()
 def clean():
     """
-    Compeletely remove installed packages in env
+    Compeletely remove installed environment packages
     """
     try:
         shutil.rmtree("./env")
@@ -75,7 +78,7 @@ def clean():
 @cli.command()
 def list():
     """
-    Show packages and versions in environyment.yml
+    Show package version from environment.yml
     """
     env_file = Path("./environment.yml")
     if env_file.exists():
@@ -105,7 +108,7 @@ def list():
 )
 def install(libraries, pip):
     """
-    Install a new conda package by first adding it to environment.yml and then updating the environment.
+    Install a new conda package by first adding it to environment.yml and then updating the environment. If called with no packages, will update the environment from environment.yaml instead.
     """
     if len(libraries) == 0:
         if not Path("./env").exists():
@@ -115,19 +118,24 @@ def install(libraries, pip):
             click.echo("environment packages installation complete!")
             click.echo("Acivate the environment with: conda activate ./env")
     else:
+        # Convert multi-arg tuple to list; for some weird reason list() doesn't work
+        libraries = [e for e in libraries]
         with open("environment.yml", "r+") as f:
             envdict = yaml.load(f, Loader=yaml.FullLoader)
-
         currentpip, everythingelse = split_conda_pip(envdict["dependencies"])
         if pip:
-            newdeps = {"pip": set(list(libraries) + currentpip)}
+            merged = libraries + currentpip
+            merged = set(merged)
+            merged = [e for e in merged]
+
+            pipdeps = {"pip": merged}
+            everythingelse.append(pipdeps)
             # Check if pip is explicitly in deps otherwise add it
             # Nested check cause they could have pip>19, pip==20, etc
             if not any(["pip" in e for e in everythingelse]):
                 everythingelse.append("pip")
-            envdict["dependencies"] = everythingelse.append(newdeps)
+            envdict["dependencies"] = everythingelse
         else:
-            libraries = [e for e in libraries]
             for e in libraries:
                 if e not in envdict["dependencies"]:
                     envdict["dependencies"].append(e)
