@@ -269,7 +269,7 @@ def uninstall(libraries, pip):
         pruned_deps = [e for e in pruned_deps]
         pipdeps = {"pip": pruned_deps}
         everythingelse.append(pipdeps)
-        envdict["dependencies"].append(everythingelse)
+        envdict["dependencies"] = everythingelse
     else:
         pruned_deps = []
         for e in libraries:
