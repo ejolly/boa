@@ -46,7 +46,11 @@ def init(name, pyv, activate, install):
     if not env_file.exists():
         envdict = {
             "name": "null",
-            "dependencies": [f"{pyv}", "pip", {"pip": ["git+https://github.com/ejolly/boa"]}],
+            "dependencies": [
+                f"{pyv}",
+                "pip",
+                {"pip": ["git+https://github.com/ejolly/boa"]},
+            ],
         }
         with open("environment.yml", "w") as f:
             _ = yaml.dump(envdict, f, sort_keys=False)
@@ -72,14 +76,47 @@ def init(name, pyv, activate, install):
 
 @cli.command()
 @click.argument("pkgs", nargs=-1)
-@click.option("--skipinstall", is_flag=True, default=False, help="Just update environment.yml without actually rebuilding the environment")
-def install(pkgs, skipinstall):
+@click.option(
+    "--skipinstall",
+    is_flag=True,
+    default=False,
+    help="Just update environment.yml without actually rebuilding the environment",
+)
+@click.option(
+    "--pip",
+    is_flag=True,
+    default=False,
+    help="Assume install should happen with pip instead of conda",
+)
+def install(pkgs, skipinstall, pip):
     """
     Install a new conda package by first adding it to environment.yml and then updating the environment.
     """
     with open("environment.yml", "r+") as f:
         envdict = yaml.load(f, Loader=yaml.FullLoader)
-        envdict["dependencies"] = list(set(envdict["dependencies"] + list(pkgs)))
+        if pip:
+            newdeps = {"pip": list(pkgs)}
+            currentpip = [
+                e
+                for e in envdict["dependencies"]
+                if isinstance(e, dict) and "pip" in e.keys()
+            ]
+            everythingelse = [
+                e
+                for e in envdict["dependencies"]
+                if isinstance(e, str) or (isinstance(e, dict) and "pip" not in e.keys())
+            ]
+            if len(currentpip):
+                currentpip = currentpip[0]
+                currentpip.update(newdeps)
+                envdict["dependencies"] = everythingelse.append(currentpip)
+            else:
+                if 'pip' not in envdict['dependencies']:
+                    envdict['dependencies'].append('pip')
+                envdict['dependencies'].append(newdeps)
+        else:
+            newdeps = {"dependencies": list(pkgs)}
+            envdict["dependencies"].update(newdeps)
         f.seek(0)
         _ = yaml.dump(envdict, f, sort_keys=False)
         f.truncate()
