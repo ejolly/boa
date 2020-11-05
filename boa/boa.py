@@ -11,6 +11,35 @@ import shutil
 import os
 
 
+def version_deps_and_make_lockfile():
+    call("conda env export --no-builds -f environment-lock.yml", shell=True)
+    with open("environment-lock.yml", "r") as f:
+        envlockdict = yaml.load(f, Loader=yaml.FullLoader)
+
+    with open("environment.yml", "r") as f:
+        envdict = yaml.load(f, Loader=yaml.FullLoader)
+
+    lockdeps_pip, lockdeps_else = split_conda_pip(envlockdict["dependencies"])
+    currentdeps_pip, currentdeps_else = split_conda_pip(envdict["dependencies"])
+    versioned_deps, versioned_pipdeps = [], []
+    for dep in currentdeps_else:
+        depversion = [e for e in lockdeps_else if dep in f"{e}="]
+        if depversion:
+            versioned_deps.append(depversion[0])
+        else:
+            versioned_deps.append(dep)
+    for dep in currentdeps_pip:
+        depversion = [e for e in lockdeps_pip if dep in f"{e}="]
+        if depversion:
+            versioned_pipdeps.append(depversion[0])
+        else:
+            versioned_pipdeps.append(dep)
+    versioned_deps.append({"pip": versioned_pipdeps})
+    envdict["dependencies"] = versioned_deps
+    with open("environment.yml", "w") as f:
+        _ = yaml.dump(envdict, f, sort_keys=True)
+
+
 def split_conda_pip(deps):
     currentpip = [e for e in deps if isinstance(e, dict) and "pip" in e.keys()]
     if len(currentpip):
@@ -96,6 +125,7 @@ def clean():
     """
     try:
         shutil.rmtree("./env")
+        Path('./environment-lock.yml').unlink()
         click.echo("removed all installed packeges")
         click.echo("use 'boa install' to rebuild environment")
     except FileNotFoundError as _:  # noqa
@@ -142,6 +172,7 @@ def install(libraries, pip):
             call(
                 "conda env create --prefix ./env --file environment.yml -q", shell=True
             )
+            version_deps_and_make_lockfile()
             click.echo("environment packages installation complete!")
             click.echo("Acivate the environment with: conda activate ./env")
             click.echo(
@@ -175,6 +206,7 @@ def install(libraries, pip):
             "conda env update --prefix ./env --file environment.yml  --prune -q",
             shell=True,
         )
+        version_deps_and_make_lockfile()
         click.echo("environment packages updated")
 
 

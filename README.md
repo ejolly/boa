@@ -35,6 +35,8 @@ Boa can create an initial minimal `environment.yml` using `boa init`, optionally
 
 You can add/remove packages by calling `boa install somepackage` or `boa uninstall somepackage`. Why do this instead of `conda install/uninstall` or `pip install/uninstall`? Simply because Boa will ensure that `environment.yml` is up-to-date after every operation. This ensures reproducibility and gives you (or others) the flexibility of easily deleting/resetting installed packaged (`boa clean`) and rebuilding and quickly environment. 
 
+Boa also generates and stores an `environment-lock.yml` file which is the result of calling `conda env export --no-builds`. This file reflects *all* packages and dependencies in the current environment, ignoring platform-specific dependencies. Boa only uses this file to keep track of package version numbers and append them to `environment.yml`. In the event of any errors you can always create a new `conda` environment using this file directly to ensure reproducibility.
+
 **Note:** *Boa will not know about packages you've install manually using* `conda install` or `pip install`! *Use `boa install` instead. It does the exact same thing but also keeps `environment.yml` up-to-date*
 
 ## Commands
