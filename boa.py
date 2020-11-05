@@ -46,10 +46,10 @@ def init(name, pyv, activate, install):
     if not env_file.exists():
         envdict = {
             "name": "null",
-            "dependencies": [f"{pyv}", {"pip": ["git+https://github.com/ejolly/boa"]}],
+            "dependencies": [f"{pyv}", "pip", {"pip": ["git+https://github.com/ejolly/boa"]}],
         }
         with open("environment.yml", "w") as f:
-            _ = yaml.dump(envdict, f)
+            _ = yaml.dump(envdict, f, sort_keys=False)
         click.echo("created environment.yml")
     if install:
         if Path("./env").exists():
@@ -72,8 +72,8 @@ def init(name, pyv, activate, install):
 
 @cli.command()
 @click.argument("pkgs", nargs=-1)
-@click.option("--dryrun", default=False)
-def install(pkgs, dryrun):
+@click.option("--skipinstall", is_flag=True, default=False, help="Just update environment.yml without actually rebuilding the environment")
+def install(pkgs, skipinstall):
     """
     Install a new conda package by first adding it to environment.yml and then updating the environment.
     """
@@ -81,9 +81,9 @@ def install(pkgs, dryrun):
         envdict = yaml.load(f, Loader=yaml.FullLoader)
         envdict["dependencies"] = list(set(envdict["dependencies"] + pkgs))
         f.seek(0)
-        _ = yaml.dump(envdict, f)
+        _ = yaml.dump(envdict, f, sort_keys=False)
         f.truncate()
-    if not dryrun:
+    if not skipinstall:
         call(
             "conda env update --prefix ./env --file environment.yml  --prune",
             shell=True,
