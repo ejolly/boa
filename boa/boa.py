@@ -8,9 +8,7 @@ import click
 from subprocess import call
 import yaml
 import shutil
-
-# import subprocess
-# import os
+import os
 
 
 def split_conda_pip(deps):
@@ -32,6 +30,35 @@ def cli():
     Boa is a wrapper around conda to make environment management easier. Call it with the sub-commands below
     """
     pass
+
+
+@cli.command()
+def config_autoenv():
+    """
+    Configure conda to automatically activate an environment if an environment.yml file is present in the cwd
+    """
+    shell = os.environ["SHELL"]
+    path = Path()
+    if "zsh" in shell:
+        path = path.home().joinpath(".zshrc")
+    else:
+        raise ValueError("Boa auto-env only support zsh")
+    if path.exists():
+        try:
+            call(f"echo 'source boa_auto_env.sh' >> {str(path)}", shell=True)
+            click.echo(
+                f"Succesfully updated {str(path)} to enable auto-environment loading"
+            )
+            click.echo(
+                "To disable this remove the 'source boa_autoenv.sh' line in this file"
+            )
+            click.echo("You will need to reload your terminal for this to take effect")
+        except:
+            click.secho("Unable to update your shell config file", color="red")
+    else:
+        raise FileNotFoundError(
+            "Could not locate your shell config file. Do you have a .zshrc and is it stored somewher other than your home directory?"
+        )
 
 
 @cli.command()
@@ -117,6 +144,9 @@ def install(libraries, pip):
             )
             click.echo("environment packages installation complete!")
             click.echo("Acivate the environment with: conda activate ./env")
+            click.echo(
+                "Or optionally run 'boa config-autoenv' to enable auto-environment. Then cd out of and back into this directory."
+            )
     else:
         # Convert multi-arg tuple to list; for some weird reason list() doesn't work
         libraries = [e for e in libraries]
