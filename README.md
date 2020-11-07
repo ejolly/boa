@@ -15,6 +15,8 @@ Boa strives to be a CLI "wrapper" for [Anaconda](https://anaconda.org/) to make 
   - [init](#init)
   - [install](#install)
   - [uninstall](#uninstall)
+  - [link](#link)
+  - [unlink](#unlink)
 - [Additional Info](#additional-info)
   - [lockfile](#lockfile)
 - [Roadmap](#roadmap)
@@ -77,6 +79,19 @@ If run with no arguments, builds a new environment from `environment.yml`. Other
 `boa uninstall PGK1 [PKG2]... [--pip]`
 
 Uninstall a package in the current environment. Behaves like `conda uninstall` or `pip uninstall` (when using the `--pip` flag). 
+
+### link
+
+`boa link`
+
+Makes the current local Boa environment available for use in your base `conda` environment. Linking allows you to use your base environment to create notebooks hooked up to *other environments*, without having to `cd` to a particular folder or `conda activate` anything. You can do this starting a `jupyter notebook/lab` server from your base environment, and using the drop down *kernel select* menu when creating a new notebook. Boa will name the kernel for this environment after the folder than contains the `environment.yml` (`project` in the GIF above). This is convenient because it only requires you to have **one** working `jupyter notebook/lab` installation in your base environment, rather than repeatedly adding `jupyter` and it's dependencies to each new `environment.yml`. Instead Boa will add a single `ipykernel` dependency and configure it for you.  
+
+### unlink
+
+`boa unlink`
+
+Undoes a link. uninstalls `ipykernel` from the local environment, and removes it from `environment.yml`.
+
 
 ## Additional Info  
 

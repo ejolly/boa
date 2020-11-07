@@ -9,6 +9,7 @@ from subprocess import call, check_output
 import yaml
 import shutil
 import os
+import sys
 
 
 def check_for_package(pkg, somelist):
@@ -113,7 +114,9 @@ def setup(autoenv):
                     msg = f"Succesfully modified {str(path)} to add boa shell tools"
                 f.write("# <<< boa end <<<\n")
             click.echo(msg)
-            click.echo("You will need to reload your terminal or 'source ~/.zshrc' for this to take effect")
+            click.echo(
+                "You will need to reload your terminal or 'source ~/.zshrc' for this to take effect"
+            )
             click.echo(
                 f"To remove boa shell tools, just delete the block commented by boa start >>> and boa end <<< in {str(path)}"
             )
@@ -209,7 +212,9 @@ def install(libraries, pip):
             )
             version_deps_and_make_lockfile()
             click.echo("\nEnvironment packages installation complete!\n")
-            click.echo("Activate environment with 'boa-activate' if you didn't setup autoenv")
+            click.echo(
+                "Activate environment with 'boa-activate' if you didn't setup autoenv"
+            )
     else:
         # Convert multi-arg tuple to list; for some weird reason list() doesn't work
         libraries = [e for e in libraries]
@@ -230,16 +235,54 @@ def install(libraries, pip):
             envdict["dependencies"] = everythingelse
         else:
             for e in libraries:
-                if e not in envdict["dependencies"]:
+                hasit, _ = check_for_package(e, envdict["dependencies"])
+                if not hasit:
                     envdict["dependencies"].append(e)
         with open("environment.yml", "w") as f:
             _ = yaml.dump(envdict, f, sort_keys=True)
-        if Path('env').exists():
+        if Path("env").exists():
             run("conda env update --prefix ./env --file environment.yml --prune -q")
         else:
-            call("conda env update --prefix ./env --file environment.yml --prune -q", shell=True)
+            call(
+                "conda env update --prefix ./env --file environment.yml --prune -q",
+                shell=True,
+            )
         version_deps_and_make_lockfile()
         click.echo("environment packages updated")
+
+
+@cli.command()
+@click.pass_context
+def link(ctx):
+    """
+    Make this local environment accessible by your base conda environmet. Linking will allow you use your local environment in a jupyter notebook running from your base environment. This is convenient because it means you don't have to worry about installing jupyter in your local environment just to be able to use it interactively. This works by installing and configuring a single package in your local environment: ipykernel. Boa uses this to make your base conda environment "aware" of this environment and will name it after the current working directory.
+    """
+    try:
+        ctx.invoke(install, libraries=["ipykernel"], pip=False)
+        run("python -m ipykernel install --user --name $(basename $PWD)")
+        click.echo("Link successful!")
+        click.echo(
+            f"If you start a jupyter notebook server from your base environment you should now see an option to create a notebook with the a kernel called: '{Path().cwd().stem}'."
+        )
+    except:
+        click.echo(f"{sys.exc_info()[0]}")
+
+
+@cli.command()
+@click.pass_context
+def unlink(ctx):
+    """
+    Unlink this local environment from your base conda environment (undoes a 'link'). This environment will no longer show up as an available kernel to use when creating new jupyter notebooks. Also removes ipykernel from the local environment.
+    """
+    try:
+        call(
+            "/bin/zsh -i -c 'jupyter kernelspec uninstall -f $(basename $PWD) && exit'",
+            shell=True,
+        )
+        ctx.invoke(uninstall, libraries=["ipykernel"], pip=False)
+        click.echo("Environment unlinked!")
+    except:
+        click.echo(f"{sys.exc_info()[0]}")
 
 
 @cli.command()
@@ -262,8 +305,8 @@ def uninstall(libraries, pip):
     currentpip, everythingelse = split_conda_pip(envdict["dependencies"])
     if pip:
         # We have to call pip directly to uninstall cause conda wont
-        pipstr = ' '.join(libraries)
-        run(f'pip uninstall {pipstr} -y -q')
+        pipstr = " ".join(libraries)
+        run(f"pip uninstall {pipstr} -y -q")
         # Now update the environment
         for e in libraries:
             _, currentpip = check_for_package(e, currentpip)
@@ -286,8 +329,8 @@ def uninstall(libraries, pip):
     with open("environment.yml", "w") as f:
         _ = yaml.dump(envdict, f, sort_keys=True)
     # FIXME: Remove when GH:1 is resolved
-    if Path('env').exists():
-        shutil.rmtree('env')
+    if Path("env").exists():
+        shutil.rmtree("env")
     # run("conda env update --prefix ./env --file environment.yml --prune -q")
     call("conda env create --prefix ./env --file environment.yml -q", shell=True)
     version_deps_and_make_lockfile()
