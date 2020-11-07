@@ -51,11 +51,11 @@ You an always get a list of available commands and usage help with `boa --help` 
 
 `boa setup [--autoenv]`
 
-You should run this the first time you install Boa, preferablly using the `--autoenv` flag. This will add the following command aliases to your `~/.zshrc`: `boa-activate` and `boa-deactivate` which behave just like `conda activate/deactivate` but for the local environment. The `--autoenv` flag will setup a hook to **automatically activate and deactivate** a local environment when you `cd` into a directory that contains an `environment.yml` file. Setting up Boa with this functionality is recommended as boa will seamlessly handle switching conda environments for you as your `cd` around. 
+You should run this the first time you install Boa, preferablly using the `--autoenv` flag. This will add the following command aliases to your `~/.zshrc`: `boa-activate` and `boa-deactivate` which behave just like `conda activate/deactivate` but for the local environment (note the `-`). The `--autoenv` flag will setup a hook to **automatically activate and deactivate** a local environment when you `cd` into a directory that contains an `environment.yml` file. Setting up Boa with this functionality is recommended as boa will seamlessly handle switching conda environments for you as your `cd` around. 
 
 #### autoenv caveats
 
-`--autoenv` only cares about the presence of `environment.yml` in the local directory and it doesn't care if this file was created using Boa (`boa init`) or manually. If it detects such a file and an `env` folder in the same directory, it will try to automatically activate the environment. If no `env` folder is present, Boa will automatically build the environment using the `environment.yml` file. If you're already using `environment.yml` in your projects you may not want these automatic behaviors, hence why the flag is optional. You can always use `conda activate/deactivate` to change environments if boa has auto-switched for you.
+`--autoenv` only cares about the presence of `environment.yml` in the local directory and it doesn't care if this file was created using Boa (`boa init`) or manually. If it detects such a file and an `env` folder in the same directory, it will try to automatically activate the environment. If no `env` folder is present, Boa will automatically build the environment using the `environment.yml` file. If you're already using `environment.yml` in your projects you may not want these automatic behaviors, hence why the flag is optional. You can always use `conda activate/deactivate` or the equivalent `boa-activate`/`boa-deactivate` (note the `-`) to change environments if boa has auto-switched for you.
 
 ### init
 
