@@ -1,4 +1,3 @@
-#!/Users/Esh/anaconda3/bin/python
 """
 Main CLI run time
 """
