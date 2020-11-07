@@ -1,13 +1,10 @@
 from setuptools import setup, find_packages
 
-with open("boa/version.py") as f:
-    version = f.read()
-
 setup(
     name="boa",
     author="Eshin Jolly",
     author_email="eshin.jolly@gmail.com",
-    version=version,
+    version="0.0.1",
     py_modules=["boa"],
     license="MIT",
     packages=find_packages(exclude=["bin"]),
