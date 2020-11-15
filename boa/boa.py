@@ -4,7 +4,7 @@ Main CLI run time
 
 from pathlib import Path
 import click
-from subprocess import call, check_output
+from subprocess import CalledProcessError, call, check_output
 import yaml
 import shutil
 import os
@@ -143,7 +143,7 @@ def init(pyv):
     if not env_file.exists():
         envdict = {
             "name": "null",
-            "channells": ["defaults", "conda-forge"],
+            "channels": ["defaults", "conda-forge"],
             "dependencies": [
                 f"{pyv}",
                 "pip",
@@ -208,7 +208,11 @@ def install(libraries, pip):
     """
     if len(libraries) == 0:
         if not Path("./env").exists():
-            call("mamba create --prefix ./env --file environment.yml -q", shell=True)
+            try:
+                check_output("which mamba", shell=True)
+                call("mamba create --prefix ./env --file environment.yml -q", shell=True)
+            except CalledProcessError as e: # noqa
+                call("conda env create --prefix ./env --file environment.yml -q", shell=True)
             version_deps_and_make_lockfile()
             click.echo("\nEnvironment packages installation complete!\n")
             click.echo(
