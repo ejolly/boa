@@ -46,7 +46,7 @@ def run(cmd):
     return
 
 
-def version_deps_and_make_lockfile(libraries=None, pip=False):
+def version_deps_and_make_lockfile(libraries=None, pip=False, uninstall=False):
     """Update package versions from environment-lock.yml"""
 
     run("conda env export --no-builds -f environment-lock.yml")
@@ -59,29 +59,48 @@ def version_deps_and_make_lockfile(libraries=None, pip=False):
     lockdeps_pip, lockdeps_else = split_conda_pip(envlockdict["dependencies"])
     currentdeps_pip, currentdeps_else = split_conda_pip(envdict["dependencies"])
     versioned_deps, versioned_pipdeps = [], []
-    # For anything in the environment.yml that doesn't have a version, get it from the lock (exported env) file
-    for dep in currentdeps_else:
-        depversion, _ = check_for_package(dep, lockdeps_else)
-        if depversion:
-            versioned_deps.append(depversion[0])
+    if uninstall:
+        # Prune out deps
+        if pip:
+            for e in libraries:
+                _, nohasit = check_for_package(e, currentdeps_pip)
+                versioned_pipdeps += nohasit
+            versioned_pipdeps = set(versioned_pipdeps)
+            versioned_pipdeps = [e for e in versioned_pipdeps]
         else:
-            versioned_deps.append(dep)
-    for dep in currentdeps_pip:
-        depversion, _ = check_for_package(dep, lockdeps_pip)
-        if depversion:
-            versioned_pipdeps.append(depversion[0])
-        else:
-            versioned_pipdeps.append(dep)
-    # Add versioned numbers for recently installed packages
-    if libraries is not None:
-        to_check = currentdeps_pip if pip else currentdeps_else
-        to_get = lockdeps_pip if pip else lockdeps_else
-        to_update = versioned_pipdeps if pip else versioned_deps
-        for lib in libraries:
-            hasit, _ = check_for_package(lib, to_check)
-            if not hasit:
-                hasit, _ = check_for_package(lib, to_get)
-                to_update.append(hasit[0])
+            for e in libraries:
+                _, nohasit = check_for_package(e, currentdeps_else)
+                versioned_deps += nohasit
+            versioned_deps = set(versioned_deps)
+            versioned_deps = [e for e in versioned_deps]
+    else:
+        # For anything in the environment.yml that doesn't have a version, get it from the lock (exported env) file
+        for dep in currentdeps_else:
+            depversion, _ = check_for_package(dep, lockdeps_else)
+            if depversion:
+                versioned_deps.append(depversion[0])
+            else:
+                versioned_deps.append(dep)
+        for dep in currentdeps_pip:
+            depversion, _ = check_for_package(dep, lockdeps_pip)
+            if depversion:
+                versioned_pipdeps.append(depversion[0])
+            else:
+                versioned_pipdeps.append(dep)
+        # Add versioned numbers for recently installed packages
+        if libraries is not None:
+            to_check = currentdeps_pip if pip else currentdeps_else
+            to_get = lockdeps_pip if pip else lockdeps_else
+            to_update = versioned_pipdeps if pip else versioned_deps
+            for lib in libraries:
+                hasit, _ = check_for_package(lib, to_check)
+                if not hasit:
+                    hasit, _ = check_for_package(lib, to_get)
+                    try:
+                        to_update.append(hasit[0])
+                    except IndexError as e: # noqa
+                        click.echo("Updating environment.yml failed. Was the requested pkg(s) already installed via --pip or as dependency of another package?")
+    # Update file
     versioned_deps.append({"pip": versioned_pipdeps})
     envdict["dependencies"] = versioned_deps
     with open("environment.yml", "w") as f:
@@ -339,43 +358,60 @@ def uninstall(libraries, pip):
     Uninstall a conda or pip package and remove it from environment.yml
     """
 
-    # Convert multi-arg tuple to list; for some weird reason list() doesn't work
-    libraries = [e for e in libraries]
-    with open("environment.yml", "r+") as f:
-        envdict = yaml.load(f, Loader=yaml.FullLoader)
-    currentpip, everythingelse = split_conda_pip(envdict["dependencies"])
+    libraries_str = " ".join(libraries)
     if pip:
-        # We have to call pip directly to uninstall cause conda wont
-        pipstr = " ".join(libraries)
-        run(f"pip uninstall {pipstr} -y -q")
-        # Now update the environment
-        for e in libraries:
-            _, currentpip = check_for_package(e, currentpip)
-
-        pruned_deps = set(currentpip)
-        pruned_deps = [e for e in pruned_deps]
-        pipdeps = {"pip": pruned_deps}
-        everythingelse.append(pipdeps)
-        envdict["dependencies"] = everythingelse
+        call(f"pip uninstall {libraries_str}", shell=True)
+        version_deps_and_make_lockfile(libraries, pip, uninstall=True)
     else:
-        pruned_deps = []
-        for e in libraries:
-            _, nohasit = check_for_package(e, everythingelse)
-            pruned_deps += nohasit
-        pruned_deps = set(pruned_deps)
-        pruned_deps = [e for e in pruned_deps]
-        pruned_deps.append({"pip": currentpip})
-        envdict["dependencies"] = pruned_deps
+        try:
+            check_output("which mamba", shell=True)
+            call(f"mamba install {libraries_str} -y", shell=True)
+        except CalledProcessError as e: # noqa
+            call("conda env create --prefix ./env --file environment.yml -q", shell=True)
+        version_deps_and_make_lockfile(libraries, pip, uninstall=True)
 
-    with open("environment.yml", "w") as f:
-        _ = yaml.dump(envdict, f, sort_keys=True)
-    # FIXME: Remove when GH:1 is resolved
-    if Path("env").exists():
-        shutil.rmtree("env")
-    # run("conda env update --prefix ./env --file environment.yml --prune -q")
-    call("boa create --prefix ./env --file environment.yml -q", shell=True)
-    version_deps_and_make_lockfile()
-    click.echo("environment packages updated")
+    statuses = [verify_install(lib, pip) for lib in libraries]
+    if all(statuses):
+        raise ValueError("Package installation not successful")
+    else:
+        click.echo("Environment packages updated!")
+    # Convert multi-arg tuple to list; for some weird reason list() doesn't work
+    # libraries = [e for e in libraries]
+    # with open("environment.yml", "r+") as f:
+    #     envdict = yaml.load(f, Loader=yaml.FullLoader)
+    # currentpip, everythingelse = split_conda_pip(envdict["dependencies"])
+    # if pip:
+    #     # We have to call pip directly to uninstall cause conda wont
+    #     pipstr = " ".join(libraries)
+    #     run(f"pip uninstall {pipstr} -y -q")
+    #     # Now update the environment
+    #     for e in libraries:
+    #         _, currentpip = check_for_package(e, currentpip)
+
+    #     pruned_deps = set(currentpip)
+    #     pruned_deps = [e for e in pruned_deps]
+    #     pipdeps = {"pip": pruned_deps}
+    #     everythingelse.append(pipdeps)
+    #     envdict["dependencies"] = everythingelse
+    # else:
+    #     pruned_deps = []
+    #     for e in libraries:
+    #         _, nohasit = check_for_package(e, everythingelse)
+    #         pruned_deps += nohasit
+    #     pruned_deps = set(pruned_deps)
+    #     pruned_deps = [e for e in pruned_deps]
+    #     pruned_deps.append({"pip": currentpip})
+    #     envdict["dependencies"] = pruned_deps
+
+    # with open("environment.yml", "w") as f:
+    #     _ = yaml.dump(envdict, f, sort_keys=True)
+    # # FIXME: Remove when GH:1 is resolved
+    # if Path("env").exists():
+    #     shutil.rmtree("env")
+    # # run("conda env update --prefix ./env --file environment.yml --prune -q")
+    # call("boa create --prefix ./env --file environment.yml -q", shell=True)
+    # version_deps_and_make_lockfile()
+    # click.echo("environment packages updated")
 
 
 if __name__ == "__main__":
