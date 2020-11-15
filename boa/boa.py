@@ -365,7 +365,7 @@ def uninstall(libraries, pip):
         run(f"pip uninstall {libraries_str}")
         version_deps_and_make_lockfile(libraries, pip, uninstall=True)
     else:
-        run("conda uninstall {libraries_str} -y -q")
+        call("conda uninstall {libraries_str} -y -q", shell=True)
         version_deps_and_make_lockfile(libraries, pip, uninstall=True)
 
     statuses = [not verify_install(lib, pip) for lib in libraries]
