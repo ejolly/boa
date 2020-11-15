@@ -17,16 +17,18 @@ def check_for_package(pkg, somelist):
     nohasit = [e for e in somelist if f"{pkg}=" not in e]
     return hasit, nohasit
 
+
 def verify_install(pkg, pip):
+    """Verify a package was actually installed"""
     try:
         if pip:
             _ = check_output(f"pip list | grep {pkg}", shell=True)
         else:
             _ = check_output(f"conda list | grep {pkg}", shell=True)
         return True
-    except CalledProcessError as e: # noqa
+    except CalledProcessError as e:  # noqa
         return False
-            
+
 
 def env_isactive():
     cwd = os.getcwd()
@@ -100,8 +102,10 @@ def version_deps_and_make_lockfile(libraries=None, pip=False, uninstall=False):
                     hasit, _ = check_for_package(lib, to_get)
                     try:
                         to_update.append(hasit[0])
-                    except IndexError as e: # noqa
-                        click.echo("Updating environment.yml failed. Was the requested pkg(s) already installed via --pip or as dependency of another package?")
+                    except IndexError as e:  # noqa
+                        click.echo(
+                            "Updating environment.yml failed. Was the requested pkg(s) already installed via --pip or as dependency of another package?"
+                        )
     # Update file
     versioned_deps.append({"pip": versioned_pipdeps})
     envdict["dependencies"] = versioned_deps
@@ -253,13 +257,15 @@ def install(libraries, pip):
             try:
                 check_output("which mamba", shell=True)
                 run("mamba create --prefix ./env --file environment.yml -q --no-banner")
-            except CalledProcessError as e: # noqa
-                call("conda env create --prefix ./env --file environment.yml -q", shell=True)
+            except CalledProcessError as e:  # noqa
+                call(
+                    "conda env create --prefix ./env --file environment.yml -q",
+                    shell=True,
+                )
             version_deps_and_make_lockfile()
-            click.echo("\nEnvironment packages installation complete!\n")
-            click.echo(
-                "Activate environment with 'boa-activate' if you didn't setup autoenv"
-            )
+            run("conda activate ./env")
+            click.echo("\nEnvironment setup, install, and activation complete!\n")
+            click.echo("Future installs will be much faster thanks to mamba.\n")
     else:
         libraries_str = " ".join(libraries)
         if pip:
@@ -269,7 +275,7 @@ def install(libraries, pip):
             try:
                 check_output("which mamba", shell=True)
                 run(f"mamba install {libraries_str} -y -q --no-banner")
-            except CalledProcessError as e: # noqa
+            except CalledProcessError as e:  # noqa
                 run("conda env create --prefix ./env --file environment.yml -q")
             version_deps_and_make_lockfile(libraries, pip)
 
@@ -278,39 +284,6 @@ def install(libraries, pip):
             click.echo("\nPackage(s) installed successfully!")
         else:
             raise ValueError("Package installation not successful!")
-            
-        # Convert multi-arg tuple to list; for some weird reason list() doesn't work
-        # libraries = [e for e in libraries]
-        # with open("environment.yml", "r+") as f:
-        #     envdict = yaml.load(f, Loader=yaml.FullLoader)
-        # currentpip, everythingelse = split_conda_pip(envdict["dependencies"])
-        # if pip:
-        #     merged = libraries + currentpip
-        #     merged = set(merged)
-        #     merged = [e for e in merged]
-
-        #     pipdeps = {"pip": merged}
-        #     everythingelse.append(pipdeps)
-        #     # Check if pip is explicitly in deps otherwise add it
-        #     # Nested check cause they could have pip>19, pip==20, etc
-        #     if not any(["pip" in e for e in everythingelse]):
-        #         everythingelse.append("pip")
-        #     envdict["dependencies"] = everythingelse
-        # else:
-        #     for e in libraries:
-        #         hasit, _ = check_for_package(e, envdict["dependencies"])
-        #         if not hasit:
-        #             envdict["dependencies"].append(e)
-        # with open("environment.yml", "w") as f:
-        #     _ = yaml.dump(envdict, f, sort_keys=True)
-        # if Path("env").exists():
-        #     run("mamba env update --prefix ./env --file environment.yml --prune -q")
-        # else:
-        #     call(
-        #         "mamba env update --prefix ./env --file environment.yml --prune -q",
-        #         shell=True,
-        #     )
-        # version_deps_and_make_lockfile()
 
 
 @cli.command()
@@ -374,43 +347,6 @@ def uninstall(libraries, pip):
         click.echo("\nPackages uninstalled successfully!")
     else:
         raise ValueError("Package uninstallation not successful")
-    # Convert multi-arg tuple to list; for some weird reason list() doesn't work
-    # libraries = [e for e in libraries]
-    # with open("environment.yml", "r+") as f:
-    #     envdict = yaml.load(f, Loader=yaml.FullLoader)
-    # currentpip, everythingelse = split_conda_pip(envdict["dependencies"])
-    # if pip:
-    #     # We have to call pip directly to uninstall cause conda wont
-    #     pipstr = " ".join(libraries)
-    #     run(f"pip uninstall {pipstr} -y -q")
-    #     # Now update the environment
-    #     for e in libraries:
-    #         _, currentpip = check_for_package(e, currentpip)
-
-    #     pruned_deps = set(currentpip)
-    #     pruned_deps = [e for e in pruned_deps]
-    #     pipdeps = {"pip": pruned_deps}
-    #     everythingelse.append(pipdeps)
-    #     envdict["dependencies"] = everythingelse
-    # else:
-    #     pruned_deps = []
-    #     for e in libraries:
-    #         _, nohasit = check_for_package(e, everythingelse)
-    #         pruned_deps += nohasit
-    #     pruned_deps = set(pruned_deps)
-    #     pruned_deps = [e for e in pruned_deps]
-    #     pruned_deps.append({"pip": currentpip})
-    #     envdict["dependencies"] = pruned_deps
-
-    # with open("environment.yml", "w") as f:
-    #     _ = yaml.dump(envdict, f, sort_keys=True)
-    # # FIXME: Remove when GH:1 is resolved
-    # if Path("env").exists():
-    #     shutil.rmtree("env")
-    # # run("conda env update --prefix ./env --file environment.yml --prune -q")
-    # call("boa create --prefix ./env --file environment.yml -q", shell=True)
-    # version_deps_and_make_lockfile()
-    # click.echo("environment packages updated")
 
 
 if __name__ == "__main__":

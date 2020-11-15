@@ -4,7 +4,7 @@ setup(
     name="boa",
     author="Eshin Jolly",
     author_email="eshin.jolly@gmail.com",
-    version="0.0.1",
+    version="0.0.2",
     py_modules=["boa"],
     license="MIT",
     packages=find_packages(exclude=["bin"]),
