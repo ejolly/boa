@@ -184,7 +184,7 @@ def init(pyv):
     """
 
     if pyv is None:
-        pyv = "python=3.6"
+        pyv = "python=3.8"
     env_file = Path("./environment.yml")
     if not env_file.exists():
         envdict = {
