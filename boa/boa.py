@@ -268,16 +268,16 @@ def install(libraries, pip):
         else:
             try:
                 check_output("which mamba", shell=True)
-                call(f"mamba install {libraries_str} -y --no-banner", shell=True)
+                call(f"mamba install {libraries_str} -y -q --no-banner", shell=True)
             except CalledProcessError as e: # noqa
                 call("conda env create --prefix ./env --file environment.yml -q", shell=True)
             version_deps_and_make_lockfile(libraries, pip)
 
         statuses = [verify_install(lib, pip) for lib in libraries]
-        if not all(statuses):
-            raise ValueError("Package installation not successful")
+        if all(statuses):
+            click.echo("\nPackage(s) installed successfully!")
         else:
-            click.echo("Environment packages updated!")
+            raise ValueError("Package installation not successful!")
             
         # Convert multi-arg tuple to list; for some weird reason list() doesn't work
         # libraries = [e for e in libraries]
@@ -365,18 +365,14 @@ def uninstall(libraries, pip):
         call(f"pip uninstall {libraries_str}", shell=True)
         version_deps_and_make_lockfile(libraries, pip, uninstall=True)
     else:
-        try:
-            check_output("which mamba", shell=True)
-            call(f"mamba uninstall {libraries_str} -y --no-banner", shell=True)
-        except CalledProcessError as e: # noqa
-            call("conda uninstall {libraries_str} -y -q", shell=True)
+        call("conda uninstall {libraries_str} -y -q", shell=True)
         version_deps_and_make_lockfile(libraries, pip, uninstall=True)
 
-    statuses = [verify_install(lib, pip) for lib in libraries]
+    statuses = [not verify_install(lib, pip) for lib in libraries]
     if all(statuses):
-        raise ValueError("Package installation not successful")
+        click.echo("\nPackages uninstalled successfully!")
     else:
-        click.echo("Environment packages updated!")
+        raise ValueError("Package uninstallation not successful")
     # Convert multi-arg tuple to list; for some weird reason list() doesn't work
     # libraries = [e for e in libraries]
     # with open("environment.yml", "r+") as f:
