@@ -208,13 +208,16 @@ def clean():
     """
     Compeletely remove installed environment packages
     """
-    try:
-        shutil.rmtree("./env")
-        Path("./environment-lock.yml").unlink()
-        click.echo("removed all installed packeges")
-        click.echo("use 'boa install' to rebuild environment")
-    except FileNotFoundError as _:  # noqa
-        click.echo("no installed packages found")
+    if env_isactive():
+        click.echo("Please first deactivate the current environment using boa-deactivate or conda deactivate")
+    else:
+        try:
+            shutil.rmtree("./env")
+            Path("./environment-lock.yml").unlink()
+            click.echo("removed all installed packeges")
+            click.echo("use 'boa install' to rebuild environment")
+        except FileNotFoundError as _:  # noqa
+            click.echo("no installed packages found")
 
 
 @cli.command()
