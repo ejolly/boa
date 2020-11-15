@@ -24,10 +24,10 @@ function conda_auto_env() {
         :
       else
         # Create the environment and activate if it doesn't exist
-        echo "Conda env doesn't exist, creating..."
-        conda env create --prefix ./env --file environment.yml -q
-        conda activate ./env
-        echo "Activated local conda env"
+        echo "Conda env doesn't exist. Use boa install to create it"
+        # conda env create --prefix ./env --file environment.yml -q
+        # conda activate ./env
+        # echo "Activated local conda env"
       fi
     fi
   else

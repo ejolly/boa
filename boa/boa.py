@@ -143,9 +143,11 @@ def init(pyv):
     if not env_file.exists():
         envdict = {
             "name": "null",
+            "channells": ["defaults", "conda-forge"],
             "dependencies": [
                 f"{pyv}",
                 "pip",
+                "conda-forge::mamba",
                 {"pip": ["git+https://github.com/ejolly/boa"]},
             ],
         }
@@ -206,9 +208,7 @@ def install(libraries, pip):
     """
     if len(libraries) == 0:
         if not Path("./env").exists():
-            call(
-                "conda env create --prefix ./env --file environment.yml -q", shell=True
-            )
+            call("mamba create --prefix ./env --file environment.yml -q", shell=True)
             version_deps_and_make_lockfile()
             click.echo("\nEnvironment packages installation complete!\n")
             click.echo(
@@ -240,10 +240,10 @@ def install(libraries, pip):
         with open("environment.yml", "w") as f:
             _ = yaml.dump(envdict, f, sort_keys=True)
         if Path("env").exists():
-            run("conda env update --prefix ./env --file environment.yml --prune -q")
+            run("mamba env update --prefix ./env --file environment.yml --prune -q")
         else:
             call(
-                "conda env update --prefix ./env --file environment.yml --prune -q",
+                "mamba env update --prefix ./env --file environment.yml --prune -q",
                 shell=True,
             )
         version_deps_and_make_lockfile()
@@ -331,7 +331,7 @@ def uninstall(libraries, pip):
     if Path("env").exists():
         shutil.rmtree("env")
     # run("conda env update --prefix ./env --file environment.yml --prune -q")
-    call("conda env create --prefix ./env --file environment.yml -q", shell=True)
+    call("boa create --prefix ./env --file environment.yml -q", shell=True)
     version_deps_and_make_lockfile()
     click.echo("environment packages updated")
 
