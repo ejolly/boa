@@ -263,7 +263,7 @@ def install(libraries, pip):
     else:
         libraries_str = " ".join(libraries)
         if pip:
-            run(f"pip install {libraries_str}")
+            run(f"pip install {libraries_str} -y -q")
             version_deps_and_make_lockfile(libraries, pip)
         else:
             try:
@@ -362,7 +362,7 @@ def uninstall(libraries, pip):
 
     libraries_str = " ".join(libraries)
     if pip:
-        run(f"pip uninstall {libraries_str}")
+        run(f"pip uninstall {libraries_str} -y -q")
         version_deps_and_make_lockfile(libraries, pip, uninstall=True)
     else:
         # Use conda to uninstall because it also removes some pkg deps which mamba doesn't
