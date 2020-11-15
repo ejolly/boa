@@ -365,7 +365,8 @@ def uninstall(libraries, pip):
         run(f"pip uninstall {libraries_str}")
         version_deps_and_make_lockfile(libraries, pip, uninstall=True)
     else:
-        call("conda uninstall {libraries_str} -y -q", shell=True)
+        # Use conda to uninstall because it also removes some pkg deps which mamba doesn't
+        run(f"conda uninstall {libraries_str} -y -q")
         version_deps_and_make_lockfile(libraries, pip, uninstall=True)
 
     statuses = [not verify_install(lib, pip) for lib in libraries]
