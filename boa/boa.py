@@ -36,7 +36,7 @@ def run(cmd):
     return
 
 
-def version_deps_and_make_lockfile():
+def version_deps_and_make_lockfile(libraries=None, is_pip=False):
     """Update package versions from environment-lock.yml"""
 
     run("conda env export --no-builds -f environment-lock.yml")
@@ -49,6 +49,7 @@ def version_deps_and_make_lockfile():
     lockdeps_pip, lockdeps_else = split_conda_pip(envlockdict["dependencies"])
     currentdeps_pip, currentdeps_else = split_conda_pip(envdict["dependencies"])
     versioned_deps, versioned_pipdeps = [], []
+    # For anything in the environment.yml that doesn't have a version, get it from the lock (exported env) file
     for dep in currentdeps_else:
         depversion, _ = check_for_package(dep, lockdeps_else)
         if depversion:
@@ -61,6 +62,15 @@ def version_deps_and_make_lockfile():
             versioned_pipdeps.append(depversion[0])
         else:
             versioned_pipdeps.append(dep)
+    # Add versioned numbers for recently installed packages
+    if libraries is not None:
+        to_check = currentdeps_pip if is_pip else currentdeps_else
+        to_get = lockdeps_pip if is_pip else lockdeps_else
+        for lib in libraries:
+            hasit, _ = check_for_package(lib, to_check)
+            if not hasit:
+                hasit, _ = check_for_package(lib, to_get)
+                versioned_deps.append(hasit[0])
     versioned_deps.append({"pip": versioned_pipdeps})
     envdict["dependencies"] = versioned_deps
     with open("environment.yml", "w") as f:
@@ -219,38 +229,48 @@ def install(libraries, pip):
                 "Activate environment with 'boa-activate' if you didn't setup autoenv"
             )
     else:
-        # Convert multi-arg tuple to list; for some weird reason list() doesn't work
-        libraries = [e for e in libraries]
-        with open("environment.yml", "r+") as f:
-            envdict = yaml.load(f, Loader=yaml.FullLoader)
-        currentpip, everythingelse = split_conda_pip(envdict["dependencies"])
+        libraries_str = " ".join(libraries)
         if pip:
-            merged = libraries + currentpip
-            merged = set(merged)
-            merged = [e for e in merged]
+            pass
+        else:
+            try:
+                check_output("which mamba", shell=True)
+                call(f"mamba install {libraries_str} -y", shell=True)
+            except CalledProcessError as e: # noqa
+                call("conda env create --prefix ./env --file environment.yml -q", shell=True)
+            version_deps_and_make_lockfile(libraries, pip)
+        # Convert multi-arg tuple to list; for some weird reason list() doesn't work
+        # libraries = [e for e in libraries]
+        # with open("environment.yml", "r+") as f:
+        #     envdict = yaml.load(f, Loader=yaml.FullLoader)
+        # currentpip, everythingelse = split_conda_pip(envdict["dependencies"])
+        # if pip:
+        #     merged = libraries + currentpip
+        #     merged = set(merged)
+        #     merged = [e for e in merged]
 
-            pipdeps = {"pip": merged}
-            everythingelse.append(pipdeps)
-            # Check if pip is explicitly in deps otherwise add it
-            # Nested check cause they could have pip>19, pip==20, etc
-            if not any(["pip" in e for e in everythingelse]):
-                everythingelse.append("pip")
-            envdict["dependencies"] = everythingelse
-        else:
-            for e in libraries:
-                hasit, _ = check_for_package(e, envdict["dependencies"])
-                if not hasit:
-                    envdict["dependencies"].append(e)
-        with open("environment.yml", "w") as f:
-            _ = yaml.dump(envdict, f, sort_keys=True)
-        if Path("env").exists():
-            run("mamba env update --prefix ./env --file environment.yml --prune -q")
-        else:
-            call(
-                "mamba env update --prefix ./env --file environment.yml --prune -q",
-                shell=True,
-            )
-        version_deps_and_make_lockfile()
+        #     pipdeps = {"pip": merged}
+        #     everythingelse.append(pipdeps)
+        #     # Check if pip is explicitly in deps otherwise add it
+        #     # Nested check cause they could have pip>19, pip==20, etc
+        #     if not any(["pip" in e for e in everythingelse]):
+        #         everythingelse.append("pip")
+        #     envdict["dependencies"] = everythingelse
+        # else:
+        #     for e in libraries:
+        #         hasit, _ = check_for_package(e, envdict["dependencies"])
+        #         if not hasit:
+        #             envdict["dependencies"].append(e)
+        # with open("environment.yml", "w") as f:
+        #     _ = yaml.dump(envdict, f, sort_keys=True)
+        # if Path("env").exists():
+        #     run("mamba env update --prefix ./env --file environment.yml --prune -q")
+        # else:
+        #     call(
+        #         "mamba env update --prefix ./env --file environment.yml --prune -q",
+        #         shell=True,
+        #     )
+        # version_deps_and_make_lockfile()
         click.echo("environment packages updated")
 
 
