@@ -263,13 +263,13 @@ def install(libraries, pip):
                     shell=True,
                 )
             version_deps_and_make_lockfile()
-            run("conda activate ./env")
-            click.echo("\nEnvironment setup, install, and activation complete!\n")
+            click.echo("\nEnvironment setup and install complete!\n")
             click.echo("Future installs will be much faster thanks to mamba.\n")
+            click.echo("Activate with boa-activate if you didn't run boa setup --autoenv. Otherwise just cd out of and back into the cwd.")
     else:
         libraries_str = " ".join(libraries)
         if pip:
-            run(f"pip install {libraries_str} -y -q")
+            run(f"pip install {libraries_str} -q")
             version_deps_and_make_lockfile(libraries, pip)
         else:
             try:
