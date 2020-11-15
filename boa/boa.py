@@ -67,12 +67,14 @@ def version_deps_and_make_lockfile(libraries=None, pip=False, uninstall=False):
                 versioned_pipdeps += nohasit
             versioned_pipdeps = set(versioned_pipdeps)
             versioned_pipdeps = [e for e in versioned_pipdeps]
+            versioned_deps = currentdeps_else
         else:
             for e in libraries:
                 _, nohasit = check_for_package(e, currentdeps_else)
                 versioned_deps += nohasit
             versioned_deps = set(versioned_deps)
             versioned_deps = [e for e in versioned_deps]
+            versioned_pipdeps = currentdeps_pip
     else:
         # For anything in the environment.yml that doesn't have a version, get it from the lock (exported env) file
         for dep in currentdeps_else:
