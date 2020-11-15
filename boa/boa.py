@@ -76,11 +76,12 @@ def version_deps_and_make_lockfile(libraries=None, pip=False):
     if libraries is not None:
         to_check = currentdeps_pip if pip else currentdeps_else
         to_get = lockdeps_pip if pip else lockdeps_else
+        to_update = versioned_pipdeps if pip else versioned_deps
         for lib in libraries:
             hasit, _ = check_for_package(lib, to_check)
             if not hasit:
                 hasit, _ = check_for_package(lib, to_get)
-                versioned_deps.append(hasit[0])
+                to_update.append(hasit[0])
     versioned_deps.append({"pip": versioned_pipdeps})
     envdict["dependencies"] = versioned_deps
     with open("environment.yml", "w") as f:
@@ -255,7 +256,7 @@ def install(libraries, pip):
         if not all(statuses):
             raise ValueError("Package installation not successful")
         else:
-            click.echo("environment packages updated")
+            click.echo("Environment packages updated!")
             
         # Convert multi-arg tuple to list; for some weird reason list() doesn't work
         # libraries = [e for e in libraries]
