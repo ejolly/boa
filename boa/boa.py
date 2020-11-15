@@ -252,7 +252,7 @@ def install(libraries, pip):
         if not Path("./env").exists():
             try:
                 check_output("which mamba", shell=True)
-                call("mamba create --prefix ./env --file environment.yml -q", shell=True)
+                call("mamba create --prefix ./env --file environment.yml -q --no-banner", shell=True)
             except CalledProcessError as e: # noqa
                 call("conda env create --prefix ./env --file environment.yml -q", shell=True)
             version_deps_and_make_lockfile()
@@ -268,7 +268,7 @@ def install(libraries, pip):
         else:
             try:
                 check_output("which mamba", shell=True)
-                call(f"mamba install {libraries_str} -y", shell=True)
+                call(f"mamba install {libraries_str} -y --no-banner", shell=True)
             except CalledProcessError as e: # noqa
                 call("conda env create --prefix ./env --file environment.yml -q", shell=True)
             version_deps_and_make_lockfile(libraries, pip)
@@ -367,7 +367,7 @@ def uninstall(libraries, pip):
     else:
         try:
             check_output("which mamba", shell=True)
-            call(f"mamba uninstall {libraries_str} -y", shell=True)
+            call(f"mamba uninstall {libraries_str} -y --no-banner", shell=True)
         except CalledProcessError as e: # noqa
             call("conda uninstall {libraries_str} -y -q", shell=True)
         version_deps_and_make_lockfile(libraries, pip, uninstall=True)
