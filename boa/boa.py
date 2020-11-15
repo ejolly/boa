@@ -252,7 +252,7 @@ def install(libraries, pip):
         if not Path("./env").exists():
             try:
                 check_output("which mamba", shell=True)
-                call("mamba create --prefix ./env --file environment.yml -q --no-banner", shell=True)
+                run("mamba create --prefix ./env --file environment.yml -q --no-banner", shell=True)
             except CalledProcessError as e: # noqa
                 call("conda env create --prefix ./env --file environment.yml -q", shell=True)
             version_deps_and_make_lockfile()
@@ -263,14 +263,14 @@ def install(libraries, pip):
     else:
         libraries_str = " ".join(libraries)
         if pip:
-            call(f"pip install {libraries_str}", shell=True)
+            run(f"pip install {libraries_str}", shell=True)
             version_deps_and_make_lockfile(libraries, pip)
         else:
             try:
                 check_output("which mamba", shell=True)
-                call(f"mamba install {libraries_str} -y -q --no-banner", shell=True)
+                run(f"mamba install {libraries_str} -y -q --no-banner", shell=True)
             except CalledProcessError as e: # noqa
-                call("conda env create --prefix ./env --file environment.yml -q", shell=True)
+                run("conda env create --prefix ./env --file environment.yml -q", shell=True)
             version_deps_and_make_lockfile(libraries, pip)
 
         statuses = [verify_install(lib, pip) for lib in libraries]
@@ -362,10 +362,10 @@ def uninstall(libraries, pip):
 
     libraries_str = " ".join(libraries)
     if pip:
-        call(f"pip uninstall {libraries_str}", shell=True)
+        run(f"pip uninstall {libraries_str}", shell=True)
         version_deps_and_make_lockfile(libraries, pip, uninstall=True)
     else:
-        call("conda uninstall {libraries_str} -y -q", shell=True)
+        run("conda uninstall {libraries_str} -y -q", shell=True)
         version_deps_and_make_lockfile(libraries, pip, uninstall=True)
 
     statuses = [not verify_install(lib, pip) for lib in libraries]
