@@ -17,6 +17,16 @@ def check_for_package(pkg, somelist):
     nohasit = [e for e in somelist if f"{pkg}=" not in e]
     return hasit, nohasit
 
+def verify_install(pkg, pip):
+    try:
+        if pip:
+            _ = check_output(f"pip list | grep {pkg}", shell=True)
+        else:
+            _ = check_output(f"conda list | grep {pkg}", shell=True)
+        return True
+    except CalledProcessError as e: # noqa
+        return False
+            
 
 def env_isactive():
     cwd = os.getcwd()
@@ -36,7 +46,7 @@ def run(cmd):
     return
 
 
-def version_deps_and_make_lockfile(libraries=None, is_pip=False):
+def version_deps_and_make_lockfile(libraries=None, pip=False):
     """Update package versions from environment-lock.yml"""
 
     run("conda env export --no-builds -f environment-lock.yml")
@@ -64,8 +74,8 @@ def version_deps_and_make_lockfile(libraries=None, is_pip=False):
             versioned_pipdeps.append(dep)
     # Add versioned numbers for recently installed packages
     if libraries is not None:
-        to_check = currentdeps_pip if is_pip else currentdeps_else
-        to_get = lockdeps_pip if is_pip else lockdeps_else
+        to_check = currentdeps_pip if pip else currentdeps_else
+        to_get = lockdeps_pip if pip else lockdeps_else
         for lib in libraries:
             hasit, _ = check_for_package(lib, to_check)
             if not hasit:
@@ -240,6 +250,13 @@ def install(libraries, pip):
             except CalledProcessError as e: # noqa
                 call("conda env create --prefix ./env --file environment.yml -q", shell=True)
             version_deps_and_make_lockfile(libraries, pip)
+
+        statuses = [verify_install(lib, pip) for lib in libraries]
+        if not all(statuses):
+            raise ValueError("Package installation not successful")
+        else:
+            click.echo("environment packages updated")
+            
         # Convert multi-arg tuple to list; for some weird reason list() doesn't work
         # libraries = [e for e in libraries]
         # with open("environment.yml", "r+") as f:
@@ -272,7 +289,6 @@ def install(libraries, pip):
         #         shell=True,
         #     )
         # version_deps_and_make_lockfile()
-        click.echo("environment packages updated")
 
 
 @cli.command()
