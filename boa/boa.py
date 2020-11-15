@@ -231,7 +231,8 @@ def install(libraries, pip):
     else:
         libraries_str = " ".join(libraries)
         if pip:
-            pass
+            call(f"pip install {libraries_str}", shell=True)
+            version_deps_and_make_lockfile(libraries, pip)
         else:
             try:
                 check_output("which mamba", shell=True)
